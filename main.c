@@ -2,80 +2,60 @@
 #include <stdlib.h>
 #include "processo.h"
 
-void menu() {
-    printf("=== Gerenciador de Processos ===\n");
-    printf("1. Ordenar por ID (crescente) e salvar em CSV\n");
-    printf("2. Ordenar por Data de Ajuizamento (decrescente) e salvar em CSV\n");
-    printf("3. Contar processos por ID de Classe\n");
-    printf("4. Contar Assuntos Únicos\n");
-    printf("5. Calcular Dias de Tramitação de um Processo\n");
-    printf("0. Sair\n");
-    printf("Escolha uma opção: ");
-}
+int main(void) {
+    // Parte 4: nome fixo do CSV
+    const char *arquivo = "processo_043_202409032338.csv";
 
-int main() {
-    int qtd;
-    Processo* processos = carregarProcessos("processo_043_202409032338.csv", &qtd);
+    int n;
+    char *header;
+    Processo *vet = lerProcessos(arquivo, &n, &header);
 
-    if (!processos) {
-        fprintf(stderr, "Erro ao carregar os processos.\n");
-        return 1;
-    }
+    // Ordenar por ID e gerar CSV
+    ordenarPorId(vet, n);
+    escreverOrdenadoId(vet, n, header, "ordenado_por_id.csv");
+    printf("Arquivo 'ordenado_por_id.csv' criado.\n");
 
-    int opcao;
-    do {
-        menu();
-        scanf("%d", &opcao);
+    printf("\n");
 
-        switch (opcao) {
-            case 1: {
-                ordenarPorId(processos, qtd);
-                salvarCSV(processos, qtd, "processos_ordenados_por_id.csv");
-                printf("Processos ordenados por ID (crescente) e salvos em 'processos_ordenados_por_id.csv'.\n");
-                break;
-            }
-                
-            case 2: {
-                ordenarPorData(processos, qtd);
-                salvarCSV(processos, qtd, "processos_ordenados_por_data.csv");
-                printf("Processos ordenados por Data de Ajuizamento (decrescente) e salvos em 'processos_ordenados_por_data.csv'.\n");
-                break;
-            }
+    // Ordenar por DATA e gerar CSV
+    ordenarPorData(vet, n);
+    escreverOrdenadoData(vet, n, header, "ordenado_por_data.csv");
+    printf("Arquivo 'ordenado_por_data.csv' criado.\n");
 
-            case 3: {
-                int id_classe;
-                printf("Digite o ID da classe: ");
-                scanf("%d", &id_classe);
-                int count = contarPorClasse(processos, qtd, id_classe);
-                printf("Número de processos vinculados ao ID de classe %d: %d\n", id_classe, count);
-                break;
-            }
+    printf("\n");
 
-            case 4: {
-                int count = contarAssuntosUnicos(processos, qtd);
-                printf("Número de assuntos únicos: %d\n", count);
-                break;
-            }
+    // Contar processos com ID_CLASSE = 12554
+    int id_classe_fixo = 12554;
+    printf("Total de processos com ID_CLASSE=%d: %d\n",
+           id_classe_fixo, contarPorClasse(vet, n, id_classe_fixo));
 
-            case 5: {
-                char data[20];
-                printf("Digite a data de ajuizamento (YYYY-MM-DD HH:MM:SS): ");
-                scanf("%s", data);
-                int dias = calcularDiasTramitacao(data);
-                printf("O processo está em tramitação há %d dias.\n", dias);
-                break;
-            }
+    printf("\n");
 
-            case 0:
-                printf("Saindo...\n");
-                break;
+    // Contar ID_ASSUNTOS únicos
+    printf("Assuntos únicos: %d\n", contarAssuntosUnicos(vet, n));
 
-            default:
-                printf("Opção inválida.\n");
+    printf("\n");
+
+    // Listar processos com >1 assunto
+    listarProcessosMultiplosAssuntos(vet, n);
+
+    printf("\n");
+    
+    // Calcular dias em tramitação para ID = 638633058
+    long id_processo_fixo = 638633058;
+    int encontrado = 0;
+    for (int i = 0; i < n; i++) {
+        if (vet[i].id == id_processo_fixo) {
+            printf("ID %ld está há %d dias em tramitação.\n",
+                   id_processo_fixo,
+                   diasEmTramitacao(vet[i].data_ajuizamento));
+            encontrado = 1;
+            break;
         }
+    }
+    if (!encontrado)
+        printf("Processo com ID %ld não encontrado.\n", id_processo_fixo);
 
-    } while (opcao != 0);
-
-    free(processos);
+    liberarProcessos(vet, n, header);
     return 0;
 }

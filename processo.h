@@ -1,34 +1,43 @@
 #ifndef PROCESSO_H
 #define PROCESSO_H
 
+#include <time.h>
+
+// Tipo Abstrato de Dados para um Processo
 typedef struct {
-    long id;                     // Identificador único do processo
-    char numero[20];             // Número do processo
-    char data_ajuizamento[20];   // Data de ajuizamento no formato "YYYY-MM-DD HH:MM:SS"
-    int id_classe;               // Classe vinculada ao processo
-    int id_assunto;              // Assunto vinculado ao processo
-    int ano_eleicao;             // Ano da eleição relacionada
+    long   id;                    // identificador
+    char   numero[32];            // número do processo
+    char   data_ajuizamento[24];  // "YYYY-MM-DD hh:mm:ss.fff"
+    int    id_classe;             // classe vinculada
+    char  *assuntos;              // multivalorados "{123,456}"
+    int    ano_eleicao;           // ano da eleição
 } Processo;
 
-// Função para carregar os processos de um arquivo CSV
-Processo* carregarProcessos(const char* nomeArquivo, int* qtd);
+// Lê todo o CSV e devolve um vetor dinâmico de Processo.
+// outN recebe o número de registros lidos.
+// header recebe a linha de cabeçalho (que deve ser reimpressa nos CSVs de saída).
+Processo *lerProcessos(const char *arquivo, int *outN, char **header);
 
-// Função para ordenar os processos por ID (ordem crescente)
-void ordenarPorId(Processo* processos, int qtd);
+// Libera toda a memória alocada pelo vetor de Processo
+void liberarProcessos(Processo *v, int n, char *header);
 
-// Função para ordenar os processos por data de ajuizamento (ordem decrescente)
-void ordenarPorData(Processo* processos, int qtd);
+// Itens 1 e 2: ordenação manual + escrita CSV mantendo cabeçalho
+void ordenarPorId(Processo *v, int n);
+void escreverOrdenadoId(Processo *v, int n, const char *header, const char *saida);
 
-// Função para contar o número de processos vinculados a um ID de classe específico
-int contarPorClasse(Processo* processos, int qtd, int id_classe);
+void ordenarPorData(Processo *v, int n);
+void escreverOrdenadoData(Processo *v, int n, const char *header, const char *saida);
 
-// Função para contar o número de assuntos únicos nos processos
-int contarAssuntosUnicos(Processo* processos, int qtd);
+// Item 3: conta quantos processos têm determinado id_classe
+int contarPorClasse(Processo *v, int n, int classe);
 
-// Função para calcular quantos dias um processo está em tramitação
-int calcularDiasTramitacao(const char* dataAjuizamento);
+// Item 4: conta quantos id_assuntos distintos aparecem na base
+int contarAssuntosUnicos(Processo *v, int n);
 
-// Função para salvar os processos ordenados em um arquivo CSV
-void salvarCSV(Processo* processos, int qtd, const char* nomeArquivo);
+// Item 5: imprime todos os processos com >1 assunto
+void listarProcessosMultiplosAssuntos(Processo *v, int n);
+
+// Item 6: retorna quantos dias o processo está em tramitação
+int diasEmTramitacao(const char *data);
 
 #endif // PROCESSO_H
